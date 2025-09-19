@@ -169,6 +169,11 @@
 <h4>Library</h4>
 <div class="list gallery grid" id="videosList"></div>
 </section>
+<hr/>
+<section>
+  <h4>Liked Videos</h4>
+  <div class="list gallery grid" id="likedList"></div>
+</section>
 </main>
 <!-- right -->
 <aside class="panel right-col">
@@ -316,6 +321,31 @@ function renderPlaylists(){
   });
 }
 renderPlaylists();
+function renderLiked(){
+  const likedList = document.getElementById('likedList');
+  if(!likedList) return;
+  likedList.innerHTML='';
+  const ids = state.user.liked || [];
+  if(ids.length===0){
+    likedList.innerHTML='<div class="muted small">No liked videos yet</div>';
+    return;
+  }
+  ids.forEach(id=>{
+    const v=state.videos.find(x=>x.id===id);
+    if(!v) return;
+    const div=document.createElement('div');
+    div.className='video-row';
+    div.innerHTML=`
+      <div class="thumb"><video width="160" height="90" src="${v.url}" preload="metadata"></video></div>
+      <div style="flex:1">
+        <div><strong>${escape(v.title)}</strong></div>
+        <div class="muted small">${escape(v.desc||'')}</div>
+        <button class="btn" onclick="openVideo('${v.id}')">Open</button>
+      </div>`;
+    likedList.appendChild(div);
+  });
+}
+
 
 function renderVideos(filter=''){
   const mode = document.getElementById('viewMode').value;
@@ -415,15 +445,90 @@ document.getElementById('createPlaylistBtn').addEventListener('click', ()=>{
   const id = mkId('pl');
   state.playlists.push({id,title:name,videos:[]});
   save(state); renderPlaylists();
+function renderLiked(){
+  const likedList = document.getElementById('likedList');
+  if(!likedList) return;
+  likedList.innerHTML='';
+  const ids = state.user.liked || [];
+  if(ids.length===0){
+    likedList.innerHTML='<div class="muted small">No liked videos yet</div>';
+    return;
+  }
+  ids.forEach(id=>{
+    const v=state.videos.find(x=>x.id===id);
+    if(!v) return;
+    const div=document.createElement('div');
+    div.className='video-row';
+    div.innerHTML=`
+      <div class="thumb"><video width="160" height="90" src="${v.url}" preload="metadata"></video></div>
+      <div style="flex:1">
+        <div><strong>${escape(v.title)}</strong></div>
+        <div class="muted small">${escape(v.desc||'')}</div>
+        <button class="btn" onclick="openVideo('${v.id}')">Open</button>
+      </div>`;
+    likedList.appendChild(div);
+  });
+}
+
 });
 function addToPlaylistPrompt(vid){
   if(state.playlists.length===0){ const n=prompt('No playlists yet. Enter a name to create one:'); if(!n) return; state.playlists.push({id:mkId('pl'),title:n,videos:[]}); }
   const p = state.playlists[0]; p.videos.push(vid); save(state); alert('Added to '+p.title); renderPlaylists();
+function renderLiked(){
+  const likedList = document.getElementById('likedList');
+  if(!likedList) return;
+  likedList.innerHTML='';
+  const ids = state.user.liked || [];
+  if(ids.length===0){
+    likedList.innerHTML='<div class="muted small">No liked videos yet</div>';
+    return;
+  }
+  ids.forEach(id=>{
+    const v=state.videos.find(x=>x.id===id);
+    if(!v) return;
+    const div=document.createElement('div');
+    div.className='video-row';
+    div.innerHTML=`
+      <div class="thumb"><video width="160" height="90" src="${v.url}" preload="metadata"></video></div>
+      <div style="flex:1">
+        <div><strong>${escape(v.title)}</strong></div>
+        <div class="muted small">${escape(v.desc||'')}</div>
+        <button class="btn" onclick="openVideo('${v.id}')">Open</button>
+      </div>`;
+    likedList.appendChild(div);
+  });
+}
+
 }
 function viewPlaylist(id){
   const p = state.playlists.find(x=>x.id===id); if(!p) return; const names = p.videos.map(vid => (state.videos.find(v=>v.id===vid)||{}).title || 'Unknown'); alert('Playlist: '+p.title+'\n' + names.join('\n'));
 }
-function delPlaylist(id){ if(!confirm('Delete playlist?')) return; state.playlists = state.playlists.filter(x=>x.id!==id); save(state); renderPlaylists(); }
+function delPlaylist(id){ if(!confirm('Delete playlist?')) return; state.playlists = state.playlists.filter(x=>x.id!==id); save(state); renderPlaylists();
+function renderLiked(){
+  const likedList = document.getElementById('likedList');
+  if(!likedList) return;
+  likedList.innerHTML='';
+  const ids = state.user.liked || [];
+  if(ids.length===0){
+    likedList.innerHTML='<div class="muted small">No liked videos yet</div>';
+    return;
+  }
+  ids.forEach(id=>{
+    const v=state.videos.find(x=>x.id===id);
+    if(!v) return;
+    const div=document.createElement('div');
+    div.className='video-row';
+    div.innerHTML=`
+      <div class="thumb"><video width="160" height="90" src="${v.url}" preload="metadata"></video></div>
+      <div style="flex:1">
+        <div><strong>${escape(v.title)}</strong></div>
+        <div class="muted small">${escape(v.desc||'')}</div>
+        <button class="btn" onclick="openVideo('${v.id}')">Open</button>
+      </div>`;
+    likedList.appendChild(div);
+  });
+}
+ }
 
 // search
 document.getElementById('searchBtn').addEventListener('click', ()=>{ renderVideos(document.getElementById('search').value||''); });
@@ -436,7 +541,15 @@ document.getElementById('incognitoBtn').addEventListener('click', ()=>{
 
 // likes/subs/watch later
 likeBtn.addEventListener('click', ()=>{
-  if(!currentVideoId) return alert('Open a video first'); const v=state.videos.find(x=>x.id===currentVideoId); v.likes=(v.likes||0)+1; save(state); updateCounters(); renderVideos();
+  if(!currentVideoId) return alert('Open a video first');
+  const v=state.videos.find(x=>x.id===currentVideoId);
+  v.likes=(v.likes||0)+1;
+  state.user.liked = state.user.liked || [];
+  if(!state.user.liked.includes(v.id)) state.user.liked.push(v.id);
+  save(state);
+  updateCounters();
+  renderVideos();
+  renderLiked();
 });
 document.getElementById('dislikeBtn').addEventListener('click', ()=>{ if(!currentVideoId) return; const v=state.videos.find(x=>x.id===currentVideoId); v.likes=Math.max(0,(v.likes||0)-1); save(state); renderVideos(); updateCounters(); });
 subBtn.addEventListener('click', ()=>{ state.user.subs=(state.user.subs||0)+1; save(state); updateCounters(); });
@@ -454,8 +567,46 @@ document.getElementById('postCommentBtn').addEventListener('click', ()=>{
   if(!currentVideoId) return alert('Open a video first'); const txt = document.getElementById('commentInput').value.trim(); if(!txt) return;
   const v = state.videos.find(x=>x.id===currentVideoId); v.comments = v.comments || []; v.comments.unshift({id:mkId('c'), text:txt, when:now(), user:state.user.name||'Guest'}); save(state); document.getElementById('commentInput').value=''; renderComments();
 });
+
 function renderComments(){
-  commentsList.innerHTML=''; if(!currentVideoId) return; const v=state.videos.find(x=>x.id===currentVideoId); if(!v) return; (v.comments||[]).forEach(c=>{ const d=document.createElement('div'); d.innerHTML=`<div><strong>${escape(c.user)}</strong> <span class="muted small">${new Date(c.when).toLocaleString()}</span></div><div>${escape(c.text)}</div>`; d.style.padding='6px'; d.style.borderBottom='1px dashed #ddd'; commentsList.appendChild(d); });
+  commentsList.innerHTML='';
+  if(!currentVideoId) return;
+  const v = state.videos.find(x=>x.id===currentVideoId);
+  if(!v) return;
+  (v.comments||[]).forEach(c=>{
+    const d=document.createElement('div');
+    d.style.padding='6px';
+    d.style.borderBottom='1px dashed #ddd';
+    d.innerHTML=`
+      <div><strong>${escape(c.user)}</strong>
+      <span class="muted small">${new Date(c.when).toLocaleString()}</span></div>
+      <div>${escape(c.text)}</div>
+      <div class="row" style="margin-top:4px">
+        <button class="btn small" onclick="renameComment('${v.id}','${c.id}')">Rename</button>
+        <button class="btn small" onclick="deleteComment('${v.id}','${c.id}')">Delete</button>
+      </div>`;
+    commentsList.appendChild(d);
+  });
+}
+
+function renameComment(vid,cid){
+  const v = state.videos.find(x=>x.id===vid);
+  if(!v) return;
+  const c = v.comments.find(x=>x.id===cid);
+  if(!c) return;
+  const nt = prompt('Edit comment:', c.text);
+  if(nt===null) return;
+  c.text=nt;
+  save(state);
+  renderComments();
+}
+
+function deleteComment(vid,cid){
+  const v = state.videos.find(x=>x.id===vid);
+  if(!v) return;
+  v.comments = v.comments.filter(x=>x.id!==cid);
+  save(state);
+  renderComments();
 }
 
 // trim & save clip (canvas capture)
@@ -522,6 +673,31 @@ document.getElementById('replaceBtn').addEventListener('click', ()=>{ const f=do
 // initial render
 renderVideos();
 renderPlaylists();
+function renderLiked(){
+  const likedList = document.getElementById('likedList');
+  if(!likedList) return;
+  likedList.innerHTML='';
+  const ids = state.user.liked || [];
+  if(ids.length===0){
+    likedList.innerHTML='<div class="muted small">No liked videos yet</div>';
+    return;
+  }
+  ids.forEach(id=>{
+    const v=state.videos.find(x=>x.id===id);
+    if(!v) return;
+    const div=document.createElement('div');
+    div.className='video-row';
+    div.innerHTML=`
+      <div class="thumb"><video width="160" height="90" src="${v.url}" preload="metadata"></video></div>
+      <div style="flex:1">
+        <div><strong>${escape(v.title)}</strong></div>
+        <div class="muted small">${escape(v.desc||'')}</div>
+        <button class="btn" onclick="openVideo('${v.id}')">Open</button>
+      </div>`;
+    likedList.appendChild(div);
+  });
+}
+
 updateCounters();
 
 // apply skin
