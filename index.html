@@ -40,6 +40,10 @@
   .skin-win95 { --accent:#004080; --panel:#fff; --bg:#e6e6e6; }
   .skin-winxp { --accent:#0b6; --panel:#fff; --bg:#eafaf0; }
   .skin-yt05 { --accent:#ff0000; --panel:#fff; --bg:#fafafa; }
+  .skin-win98 { --accent:#2b6ea3; --panel:#fff; --bg:#e0e8f0; }
+  .skin-win2000 { --accent:#003399; --panel:#fff; --bg:#eaeaea; }
+  .skin-winme { --accent:#2e7d32; --panel:#fff; --bg:#f0fff0; }
+
 
   /* categories background presets */
   .cat-bg { width:100%; height:60px; border-radius:4px; margin-bottom:6px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; }
@@ -118,6 +122,10 @@
 <div class="theme-swatch" onclick="applySkin('skin-win95')" style="background:linear-gradient(#eff3fb,#dfe6f5)" title="Win95"></div>
 <div class="theme-swatch" onclick="applySkin('skin-winxp')" style="background:linear-gradient(#eafaf0,#dff7ea)" title="WinXP"></div>
 <div class="theme-swatch" onclick="applySkin('skin-yt05')" style="background:linear-gradient(#ffd6d6,#ff4d4d)" title="YouTube05"></div>
+<div class="theme-swatch" onclick="applySkin('skin-win98')" style="background:linear-gradient(#f0f8ff,#d0e0f0)" title="Win98"></div>
+<div class="theme-swatch" onclick="applySkin('skin-win2000')" style="background:linear-gradient(#f5f5f5,#e0e0e0)" title="Win2000"></div>
+<div class="theme-swatch" onclick="applySkin('skin-winme')" style="background:linear-gradient(#f0fff0,#d8ffd8)" title="WinME"></div>
+
 </div>
 <hr/>
 <h4>Categories / Backgrounds</h4>
@@ -387,6 +395,7 @@ function renderVideos(filter=''){
           <button class="btn" onclick="downloadVideo('${v.id}')">Download</button>
           <button class="btn" onclick="replaceVideo('${v.id}')">Replace</button>
           <button class="btn" onclick="delVideo('${v.id}')">Delete</button>
+          <button class="btn" onclick="toggleWatchLater('${v.id}')">Watch Later</button>
           <button class="btn" onclick="addToPlaylistPrompt('${v.id}')">Save to playlist</button>
         </div>
       </div>
@@ -721,7 +730,7 @@ function renderLiked(){
 updateCounters();
 
 // apply skin
-function applySkin(name){ document.body.classList.remove('skin-ie2','skin-ie3','skin-ie4','skin-ie5','skin-netscape','skin-opera','skin-win95','skin-winxp','skin-yt05'); document.body.classList.add(name); state.prefs.skin=name; save(state); }
+function applySkin(name){ document.body.classList.remove('skin-ie2','skin-ie3','skin-ie4','skin-ie5','skin-netscape','skin-opera','skin-win95','skin-winxp','skin-yt05','skin-win98','skin-win2000','skin-winme'); document.body.classList.add(name); state.prefs.skin=name; save(state); }
 
 // utilities accessible in console
 window.state = state;
@@ -776,6 +785,19 @@ if(createChannelBtn){
 renderChannelList();
 
 // === Watch Later rendering ===
+function toggleWatchLater(id){
+  state.user.watchLater = state.user.watchLater || [];
+  if(state.user.watchLater.includes(id)){
+    state.user.watchLater = state.user.watchLater.filter(x=>x!==id);
+    alert('Removed from Watch Later');
+  } else {
+    state.user.watchLater.push(id);
+    alert('Saved to Watch Later');
+  }
+  save(state); renderWatchLater(); updateCounters();
+}
+window.toggleWatchLater = toggleWatchLater;
+
 function renderWatchLater(){
   const wl=document.getElementById('watchLaterList');
   if(!wl) return;
@@ -801,6 +823,15 @@ renderWatchLater();
 
 // Hook into watch later button
 document.getElementById('saveLaterBtn').addEventListener('click', ()=>{ renderWatchLater(); });
+
+// === Enhance Search to refresh all lists ===
+document.getElementById('searchBtn').addEventListener('click', ()=>{
+  const q=document.getElementById('search').value||'';
+  renderVideos(q);
+  renderLiked();
+  renderWatchLater();
+});
+
 
 </script>
 <!-- BEGIN: NerdTube Extended Features Injection -->
