@@ -162,6 +162,12 @@
 <div class="list small" id="commentsList"></div>
 <textarea id="commentInput" placeholder="Add a comment..." rows="2"></textarea>
 <div class="row"><button class="btn" id="postCommentBtn">Post Comment</button></div>
+<div class="row" style="margin-top:6px">
+  <input id="emojiSearch" class="small-input small" placeholder="Search emoji..."/>
+  <button class="btn" id="emojiBtn">😀</button>
+</div>
+<div id="emojiPanel" class="panel hidden small" style="max-height:120px;overflow:auto"></div>
+
 </div>
 </section>
 <hr/>
@@ -174,6 +180,12 @@
   <h4>Liked Videos</h4>
   <div class="list gallery grid" id="likedList"></div>
 </section>
+<hr/>
+<section>
+  <h4>Watch Later</h4>
+  <div class="list gallery grid" id="watchLaterList"></div>
+</section>
+
 </main>
 <!-- right -->
 <aside class="panel right-col">
@@ -204,6 +216,14 @@
 <button class="btn" id="clearDataBtn">Clear Data</button>
 <button class="btn" id="exportDataBtn">Export</button>
 <button class="btn" id="importDataBtn">Import</button>
+<hr/>
+<h4>Channel Management</h4>
+<div class="list small" id="channelList"></div>
+<div class="row">
+  <input id="newChannelName" class="small-input small" placeholder="New channel"/>
+  <button class="btn" id="createChannelBtn">Create</button>
+</div>
+
 <input accept=".json" class="hidden" id="importFile" type="file"/>
 </div>
 </div>
@@ -705,6 +725,83 @@ function applySkin(name){ document.body.classList.remove('skin-ie2','skin-ie3','
 
 // utilities accessible in console
 window.state = state;
+
+// === Emoji picker ===
+const emojiPanel = document.getElementById('emojiPanel');
+const emojiBtn = document.getElementById('emojiBtn');
+const emojiSearch = document.getElementById('emojiSearch');
+const commentInput = document.getElementById('commentInput');
+const emojis = ["😀","😁","😂","🤣","😅","😊","😍","😎","🤔","😢","😭","😡","👍","👎","❤️","🔥","🎉","⭐","✅","❌"];
+function renderEmojis(filter=""){
+  emojiPanel.innerHTML = '';
+  emojis.filter(e => !filter || e.includes(filter)).forEach(e=>{
+    const span=document.createElement('span');
+    span.textContent=e;
+    span.style.cursor='pointer';
+    span.style.padding='4px';
+    span.onclick=()=>{ commentInput.value+=e; };
+    emojiPanel.appendChild(span);
+  });
+}
+if(emojiBtn){ emojiBtn.onclick=()=>{ emojiPanel.classList.toggle('hidden'); renderEmojis(); }; }
+if(emojiSearch){ emojiSearch.oninput=()=>renderEmojis(emojiSearch.value); }
+
+// === Channel Management ===
+function renderChannelList(){
+  const box=document.getElementById('channelList');
+  if(!box) return;
+  box.innerHTML='';
+  state.channels.forEach(ch=>{
+    const div=document.createElement('div');
+    div.className='row';
+    div.innerHTML=`<div style="flex:1">${escape(ch.name)}</div>
+      <button class="btn small" onclick="deleteChannel('${ch.id}')">Delete</button>`;
+    box.appendChild(div);
+  });
+}
+function deleteChannel(id){
+  if(!confirm('Delete this channel?')) return;
+  state.channels = state.channels.filter(c=>c.id!==id);
+  save(state); renderChannels(); renderChannelList();
+}
+const createChannelBtn=document.getElementById('createChannelBtn');
+if(createChannelBtn){
+  createChannelBtn.onclick=()=>{
+    const name=document.getElementById('newChannelName').value.trim();
+    if(!name) return;
+    state.channels.push({id:mkId('ch'),name});
+    save(state); renderChannels(); renderChannelList();
+  };
+}
+renderChannelList();
+
+// === Watch Later rendering ===
+function renderWatchLater(){
+  const wl=document.getElementById('watchLaterList');
+  if(!wl) return;
+  wl.innerHTML='';
+  const ids=state.user.watchLater||[];
+  if(ids.length===0){ wl.innerHTML='<div class="muted small">No videos saved</div>'; return; }
+  ids.forEach(id=>{
+    const v=state.videos.find(x=>x.id===id);
+    if(!v) return;
+    const div=document.createElement('div');
+    div.className='video-row';
+    div.innerHTML=`
+      <div class="thumb"><video width="160" height="90" src="${v.url}" preload="metadata"></video></div>
+      <div style="flex:1">
+        <div><strong>${escape(v.title)}</strong></div>
+        <div class="muted small">${escape(v.desc||'')}</div>
+        <button class="btn" onclick="openVideo('${v.id}')">Open</button>
+      </div>`;
+    wl.appendChild(div);
+  });
+}
+renderWatchLater();
+
+// Hook into watch later button
+document.getElementById('saveLaterBtn').addEventListener('click', ()=>{ renderWatchLater(); });
+
 </script>
 <!-- BEGIN: NerdTube Extended Features Injection -->
 <script>
