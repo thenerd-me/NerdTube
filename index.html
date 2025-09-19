@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>NerdTube - Broadcast Takeself</title>
+<link href="https://unpkg.com/98.css" rel="stylesheet"/>
+<style>
+  :root{
+    --accent:#3b82f6; --bg:#f0f0f0; --text:#111; --panel:#fff;
+  }
+  body{ font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background:var(--bg); color:var(--text); padding:12px; }
+  header{ display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+  .logo { font-family: 'Courier New', monospace; font-weight:700; font-size:20px; }
+  .layout{ display:grid; grid-template-columns:260px 1fr 320px; gap:12px; align-items:start; }
+  .panel{ padding:10px; background:var(--panel); border:3px solid #cfcfcf; border-radius:6px; }
+  .list{ max-height:520px; overflow:auto; padding-right:6px; }
+  .video-row{ display:flex; gap:8px; padding:6px; border:2px solid #ddd; border-radius:4px; margin-bottom:8px; align-items:center;}
+  .thumb{ width:160px; height:90px; background:#000; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; }
+  .controls{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-top:8px; }
+  .btn{ padding:6px 8px; border-radius:4px; cursor:pointer; border:2px solid #999; background:#eee; }
+  .btn.primary{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .small{ font-size:13px; }
+  .muted{ color:#666; font-size:12px; }
+  .theme-swatch{ width:28px; height:18px; border:1px solid #444; cursor:pointer; }
+  .right-col{ display:flex; flex-direction:column; gap:8px; }
+  .studio{ border:2px dashed #cfcfcf; padding:8px; border-radius:6px; }
+  .gallery.grid .video-row{ flex-direction:column; align-items:stretch; }
+  .hidden{ display:none !important; }
+
+  /* skins */
+  .skin-ie2 { --accent:#006; --panel:#e6f0ff; --bg:#dfeaff; --text:#002; }
+  .skin-ie3 { --accent:#007aeb; --panel:#fff; --bg:#dbefff; }
+  .skin-ie4 { --accent:#124; --panel:#fffdf0; --bg:#fbf9f5; }
+  .skin-ie5 { --accent:#2b7; --panel:#f6fff6; --bg:#f0fff0; }
+  .skin-netscape { --accent:#8b0000; --panel:#fff4f4; --bg:#fff0f0; }
+  .skin-opera { --accent:#b30000; --panel:#fff; --bg:#fff7f7; }
+  .skin-win95 { --accent:#004080; --panel:#fff; --bg:#e6e6e6; }
+  .skin-winxp { --accent:#0b6; --panel:#fff; --bg:#eafaf0; }
+  .skin-yt05 { --accent:#ff0000; --panel:#fff; --bg:#fafafa; }
+
+  /* categories background presets */
+  .cat-bg { width:100%; height:60px; border-radius:4px; margin-bottom:6px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; }
+
+  /* dialogue & small forms */
+  .row{ display:flex; gap:6px; align-items:center; }
+  input[type="file"]{ width:100%; }
+  textarea{ width:100%; }
+  .small-input{ font-size:13px; padding:6px; }
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: Arial, sans-serif;
+}
+.logo-img {
+  height: 60px;
+  margin-bottom: 4px;
+}
+.tagline {
+  font-size: 13px;
+  color: #444;
+  text-align: center;
+}
+  .playlist-item{ display:flex; justify-content:space-between; gap:6px; padding:6px; border-bottom:1px dashed #ddd; }
+</style>
+</head>
+<body class="skin-win95">
+<header>
+<div class="logo">
+<img alt="NerdTube logo" class="logo-img" id="siteLogo" src="img/default.png"/><div class="tagline">Broadcast Takeself</div>
+</div>
+<div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+<input id="search" placeholder="Search videos..."/>
+<button class="btn" id="searchBtn">Search</button>
+<select class="small" id="viewMode">
+<option value="list">List</option>
+<option value="grid">Gallery</option>
+</select>
+<button class="btn" id="incognitoBtn">Incognito: Off</button>
+</div>
+</header>
+<div class="layout">
+<!-- left -->
+<aside class="panel">
+<h4>Navigation</h4>
+<div class="list small">
+<button class="btn" id="homeBtn">Home</button>
+<button class="btn" id="subscriptionsBtn">Subscriptions</button>
+<button class="btn" id="channelsBtn">Channels</button>
+<button class="btn" id="libraryBtn">Library</button>
+<button class="btn" id="playlistsBtn">Playlists</button>
+<button class="btn" id="settingsBtn">Settings</button>
+<hr/>
+<h4>Upload / New</h4>
+<input accept="video/mp4,video/webm,video/ogg,video/avi,video/mov,audio/*,image/*" id="fileInput" type="file"/>
+<input class="small-input small" id="titleInput" placeholder="Title"/>
+<textarea class="small" id="descInput" placeholder="Description" rows="3"></textarea>
+<div class="row">
+<label class="small">Channel:<select id="channelSel"></select></label>
+</div>
+<div class="row">
+<button class="btn primary" id="uploadBtn">Upload</button>
+<button class="btn" id="replaceBtn">Replace</button>
+</div>
+<hr/>
+<h4>Themes / Skins</h4>
+<div style="display:flex;gap:6px;flex-wrap:wrap;">
+<div class="theme-swatch" onclick="applySkin('skin-ie2')" style="background:linear-gradient(#dfeaff,#c9ddff)" title="IE2"></div>
+<div class="theme-swatch" onclick="applySkin('skin-ie3')" style="background:linear-gradient(#dbefff,#cde6ff)" title="IE3"></div>
+<div class="theme-swatch" onclick="applySkin('skin-ie4')" style="background:linear-gradient(#fffdf0,#fff6e6)" title="IE4"></div>
+<div class="theme-swatch" onclick="applySkin('skin-ie5')" style="background:linear-gradient(#f0fff0,#dfffe0)" title="IE5"></div>
+<div class="theme-swatch" onclick="applySkin('skin-netscape')" style="background:linear-gradient(#fff0f0,#ffecec)" title="Netscape"></div>
+<div class="theme-swatch" onclick="applySkin('skin-opera')" style="background:linear-gradient(#fff7f7,#fff0f0)" title="Opera"></div>
+<div class="theme-swatch" onclick="applySkin('skin-win95')" style="background:linear-gradient(#eff3fb,#dfe6f5)" title="Win95"></div>
+<div class="theme-swatch" onclick="applySkin('skin-winxp')" style="background:linear-gradient(#eafaf0,#dff7ea)" title="WinXP"></div>
+<div class="theme-swatch" onclick="applySkin('skin-yt05')" style="background:linear-gradient(#ffd6d6,#ff4d4d)" title="YouTube05"></div>
+</div>
+<hr/>
+<h4>Categories / Backgrounds</h4>
+<div id="categories">
+<!-- presets -->
+</div>
+<hr/>
+<h4>Account</h4>
+<div id="accountBox"><div>Guest</div><div class="muted small">Local account</div></div>
+<div style="margin-top:6px;">
+<button class="btn" id="createAccountBtn">Create</button>
+<button class="btn" id="signInBtn">Sign in</button>
+<button class="btn" id="delAccountBtn">Delete</button>
+</div>
+</div>
+</aside>
+<!-- main -->
+<main class="panel">
+<section id="playerArea">
+<video controls="" id="player" style="background:#000; max-height:480px" width="100%"></video>
+<div class="controls">
+<button class="btn" id="likeBtn">Like <span id="likeCount">0</span></button>
+<button class="btn" id="dislikeBtn">Dislike</button>
+<button class="btn" id="saveLaterBtn">Watch Later</button>
+<button class="btn" id="downloadBtn">Download</button>
+<button class="btn" id="subBtn">Subscribe <span id="subs">0</span></button>
+<button class="btn" id="ccBtn">Subtitles</button>
+<label class="small">Speed
+          <select id="speedSel"><option>0.5</option><option>0.75</option><option selected="">1</option><option>1.25</option><option>1.5</option> <option>2</option></select>
+</label>
+<label class="small">Autoplay <input id="autoplayChk" type="checkbox"/></label>
+<label class="small">Loop <input id="loopChk" type="checkbox"/></label>
+<label class="small" style="margin-left:auto">Quality:
+          <select id="qualitySel"><option>Auto</option><option>1080p</option><option>720p</option><option>480p</option></select>
+</label>
+</div>
+<h3 id="videoTitle">No video selected</h3>
+<p class="muted small" id="videoDesc">Description</p>
+<hr/>
+<div id="commentArea">
+<h4>Comments</h4>
+<div class="list small" id="commentsList"></div>
+<textarea id="commentInput" placeholder="Add a comment..." rows="2"></textarea>
+<div class="row"><button class="btn" id="postCommentBtn">Post Comment</button></div>
+</div>
+</section>
+<hr/>
+<section>
+<h4>Library</h4>
+<div class="list gallery grid" id="videosList"></div>
+</section>
+</main>
+<!-- right -->
+<aside class="panel right-col">
+<div>
+<h4>Studio — Trim &amp; Editor (simple)</h4>
+<div class="studio">
+<label>Start<input class="small-input" id="trimStart" min="0" step="0.1" type="number" value="0"/></label><br/>
+<label>End<input class="small-input" id="trimEnd" min="0" step="0.1" type="number" value="3"/></label><br/>
+<div class="row">
+<button class="btn" id="previewTrimBtn">Preview</button>
+<button class="btn primary" id="saveClipBtn">Save Clip</button>
+</div>
+<div class="muted small" id="studioStatus"></div>
+</div>
+</div>
+<div>
+<h4>Playlists</h4>
+<div class="list small" id="playlists"></div>
+<div class="row">
+<input class="small-input small" id="newPlaylistName" placeholder="New playlist"/>
+<button class="btn" id="createPlaylistBtn">Create</button>
+</div>
+</div>
+<div>
+<h4>Settings</h4>
+<div class="small muted">Manage local data</div>
+<div style="margin-top:6px;">
+<button class="btn" id="clearDataBtn">Clear Data</button>
+<button class="btn" id="exportDataBtn">Export</button>
+<button class="btn" id="importDataBtn">Import</button>
+<input accept=".json" class="hidden" id="importFile" type="file"/>
+</div>
+</div>
+</aside>
+</div>
+<script>
+// Logo switching support
+const logoEl = document.getElementById('siteLogo');
+
+function setLogo(file) {
+  // Only allow png and ico files
+  if (!file.match(/\.(png|ico)$/i)) {
+    alert("Only .png or .ico logos are allowed.");
+    return;
+  }
+  logoEl.src = file;
+  localStorage.setItem("nerdtube_logo", file); // save preference
+}
+
+// Restore last logo from storage
+const savedLogo = localStorage.getItem("nerdtube_logo");
+if (savedLogo) logoEl.src = savedLogo;
+
+/* NerdTube v2 - Client-side demo implementing many requested features locally in-browser.
+   Uses localStorage for metadata and URL.createObjectURL for blobs (session/local).
+   Supports themes for IE/Netscape/Opera/Win95/XP, gallery/list view, upload/replace/delete,
+   playlists, comments, trimming via canvas+MediaRecorder, subtitles upload (WebVTT),
+   playback speed, autoplay, loop, download, watch-later, incognito mode (local).
+*/
+
+// storage helpers
+const KEY='nerdtube_v2';
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY) || '{}'); }catch(e){return{};} }
+function save(state){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+let state = load();
+if(!state.videos) state.videos = []; // {id,title,desc,url,created,likes,views,channel,subs,comments:[{id,text,when}]}
+if(!state.playlists) state.playlists = []; // {id,title,videos:[]}
+if(!state.channels) state.channels = [{id:'ch_guest',name:'Guest Channel'}];
+if(!state.prefs) state.prefs = {skin:'skin-win95',view:'list',incognito:false,autoplay:false,loop:false};
+if(!state.user) state.user = {name:'Guest',subs:0,watchLater:[]};
+
+const player = document.getElementById('player');
+const videosList = document.getElementById('videosList');
+const videoTitle = document.getElementById('videoTitle');
+const videoDesc = document.getElementById('videoDesc');
+const likeBtn = document.getElementById('likeBtn');
+const likeCount = document.getElementById('likeCount');
+const subBtn = document.getElementById('subBtn');
+const subsSpan = document.getElementById('subs');
+const commentsList = document.getElementById('commentsList');
+const categoriesDiv = document.getElementById('categories');
+
+let currentVideoId = null;
+
+// initial setup
+applySkin(state.prefs.skin);
+document.getElementById('viewMode').value = state.prefs.view || 'list';
+document.getElementById('incognitoBtn').textContent = 'Incognito: ' + (state.prefs.incognito ? 'On' : 'Off');
+document.getElementById('autoplayChk').checked = !!state.prefs.autoplay;
+document.getElementById('loopChk').checked = !!state.prefs.loop;
+
+// populate categories (background themes)
+const catPresets = [
+  {id:'danger',title:'Dangerous Creatures',color:'#9c27b0'},
+  {id:'inside',title:'Inside Your Computer',color:'#2196f3'},
+  {id:'leonardo',title:'Leonardo da Vinci',color:'#795548'},
+  {id:'mystery',title:'Mystery',color:'#3f51b5'},
+  {id:'nature',title:'Nature',color:'#4caf50'},
+  {id:'science',title:'Science',color:'#00bcd4'},
+  {id:'60s',title:"The 60's USA",color:'#f44336'},
+  {id:'golden',title:'The Golden Era',color:'#ff9800'},
+  {id:'travel',title:'Travel',color:'#009688'},
+  {id:'underwater',title:'Underwater',color:'#00695c'},
+  {id:'win95',title:'Windows 95',color:'#004080'},
+  {id:'win98',title:'Windows 98',color:'#2b6ea3'},
+  {id:'winme',title:'Windows ME',color:'#2e7d32'}
+];
+function renderCategories(){
+  categoriesDiv.innerHTML = '';
+  catPresets.forEach(c=>{
+    const d = document.createElement('div');
+    d.className='cat-bg';
+    d.style.background=c.color;
+    d.textContent = c.title;
+    d.onclick = ()=>{ document.body.style.background = c.color; state.prefs.bg=c.color; save(state); };
+    categoriesDiv.appendChild(d);
+  });
+}
+renderCategories();
+
+// UI helpers
+function mkId(pre='i'){ return pre + Math.random().toString(36).slice(2,9); }
+function now(){ return new Date().toISOString(); }
+function escape(s=''){ return (s+'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// render functions
+function renderChannels(){
+  const sel = document.getElementById('channelSel');
+  sel.innerHTML = '';
+  state.channels.forEach(ch=>{ const op=document.createElement('option'); op.value=ch.id; op.textContent=ch.name; sel.appendChild(op); });
+}
+renderChannels();
+
+function renderPlaylists(){
+  const el = document.getElementById('playlists');
+  el.innerHTML='';
+  if(state.playlists.length===0) el.innerHTML = '<div class="muted small">No playlists</div>';
+  state.playlists.forEach(p=>{
+    const div = document.createElement('div');
+    div.className='playlist-item';
+    div.innerHTML = `<div><strong>${escape(p.title)}</strong><div class="muted small">${p.videos.length} items</div></div>
+      <div><button class="btn" onclick="viewPlaylist('${p.id}')">View</button> <button class="btn" onclick="delPlaylist('${p.id}')">Delete</button></div>`;
+    el.appendChild(div);
+  });
+}
+renderPlaylists();
+
+function renderVideos(filter=''){
+  const mode = document.getElementById('viewMode').value;
+  const list = state.videos.filter(v => (v.title+v.desc).toLowerCase().includes(filter.toLowerCase()));
+  videosList.className = 'list gallery ' + (mode==='grid' ? 'grid' : 'list');
+  videosList.innerHTML = '';
+  if(list.length===0) videosList.innerHTML = '<div class="muted">No videos yet</div>';
+  list.forEach(v=>{
+    const div = document.createElement('div');
+    div.className = 'video-row';
+    div.innerHTML = `
+      <div class="thumb"><video width="160" height="90" src="${v.url}" preload="metadata"></video></div>
+      <div style="flex:1">
+        <div><strong>${escape(v.title)}</strong></div>
+        <div class="muted small">${escape(v.desc||'')}</div>
+        <div class="muted small">Views: ${v.views||0} • Likes: ${v.likes||0} • Channel: ${escape(v.channelName||'Guest')}</div>
+        <div style="margin-top:6px;">
+          <button class="btn" onclick="openVideo('${v.id}')">Open</button>
+          <button class="btn" onclick="downloadVideo('${v.id}')">Download</button>
+          <button class="btn" onclick="replaceVideo('${v.id}')">Replace</button>
+          <button class="btn" onclick="delVideo('${v.id}')">Delete</button>
+          <button class="btn" onclick="addToPlaylistPrompt('${v.id}')">Save to playlist</button>
+        </div>
+      </div>
+    `;
+    videosList.appendChild(div);
+  });
+}
+renderVideos();
+
+// open video in player
+function openVideo(id){
+  const v = state.videos.find(x=>x.id===id);
+  if(!v) return;
+  currentVideoId = id;
+  player.src = v.url;
+  player.currentTime = 0;
+  player.play().catch(()=>{});
+  videoTitle.textContent = v.title;
+  videoDesc.textContent = v.desc || '';
+  v.views = (v.views||0)+1;
+  save(state);
+  renderVideos(document.getElementById('search').value||'');
+  renderComments();
+  updateCounters();
+}
+
+// update UI counters
+function updateCounters(){
+  const v = state.videos.find(x=>x.id===currentVideoId);
+  likeCount.textContent = v ? (v.likes||0) : 0;
+  subsSpan.textContent = state.user.subs || 0;
+  document.getElementById('saveLaterBtn').textContent = state.user.watchLater && currentVideoId && state.user.watchLater.includes(currentVideoId) ? 'Saved' : 'Watch Later';
+}
+
+// add video (upload)
+document.getElementById('uploadBtn').addEventListener('click', ()=>{
+  const f = document.getElementById('fileInput').files[0];
+  if(!f) return alert('Choose a file');
+  const title = document.getElementById('titleInput').value || f.name;
+  const desc = document.getElementById('descInput').value || '';
+  const chId = document.getElementById('channelSel').value || state.channels[0].id;
+  const chName = (state.channels.find(c=>c.id===chId)||{}).name || 'Guest';
+  const id = mkId('vid');
+  const url = URL.createObjectURL(f);
+  state.videos.unshift({id,title,desc,url,created:now(),likes:0,views:0,channel:chId,channelName:chName,comments:[]});
+  save(state);
+  renderVideos();
+  alert('Uploaded locally: ' + title);
+});
+
+// replace video content
+function replaceVideo(id){
+  const inp = document.createElement('input'); inp.type='file'; inp.accept='video/*';
+  inp.onchange = ()=>{ const f=inp.files[0]; if(!f) return; const v=state.videos.find(x=>x.id===id); if(!v) return; v.url = URL.createObjectURL(f); v.fileReplaced=true; save(state); renderVideos(); alert('Replaced'); };
+  inp.click();
+}
+
+// delete video
+function delVideo(id){
+  if(!confirm('Delete video?')) return;
+  state.videos = state.videos.filter(x=>x.id!==id);
+  // remove from playlists
+  state.playlists.forEach(p=> p.videos = p.videos.filter(x=>x!==id));
+  save(state); renderVideos(); if(currentVideoId===id){ player.pause(); player.src=''; videoTitle.textContent='No video selected'; videoDesc.textContent=''; currentVideoId=null; }
+}
+
+// download video
+function downloadVideo(id){
+  const v=state.videos.find(x=>x.id===id); if(!v) return; const a=document.createElement('a'); a.href=v.url; a.download = (v.title||'video')+'.webm'; a.click();
+}
+
+// playlists functions
+document.getElementById('createPlaylistBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('newPlaylistName').value || prompt('Playlist name:');
+  if(!name) return;
+  const id = mkId('pl');
+  state.playlists.push({id,title:name,videos:[]});
+  save(state); renderPlaylists();
+});
+function addToPlaylistPrompt(vid){
+  if(state.playlists.length===0){ const n=prompt('No playlists yet. Enter a name to create one:'); if(!n) return; state.playlists.push({id:mkId('pl'),title:n,videos:[]}); }
+  const p = state.playlists[0]; p.videos.push(vid); save(state); alert('Added to '+p.title); renderPlaylists();
+}
+function viewPlaylist(id){
+  const p = state.playlists.find(x=>x.id===id); if(!p) return; const names = p.videos.map(vid => (state.videos.find(v=>v.id===vid)||{}).title || 'Unknown'); alert('Playlist: '+p.title+'\n' + names.join('\n'));
+}
+function delPlaylist(id){ if(!confirm('Delete playlist?')) return; state.playlists = state.playlists.filter(x=>x.id!==id); save(state); renderPlaylists(); }
+
+// search
+document.getElementById('searchBtn').addEventListener('click', ()=>{ renderVideos(document.getElementById('search').value||''); });
+
+// view mode & incognito
+document.getElementById('viewMode').addEventListener('change', (e)=>{ state.prefs.view = e.target.value; save(state); renderVideos(); });
+document.getElementById('incognitoBtn').addEventListener('click', ()=>{
+  state.prefs.incognito = !state.prefs.incognito; save(state); document.getElementById('incognitoBtn').textContent = 'Incognito: ' + (state.prefs.incognito ? 'On' : 'Off');
+});
+
+// likes/subs/watch later
+likeBtn.addEventListener('click', ()=>{
+  if(!currentVideoId) return alert('Open a video first'); const v=state.videos.find(x=>x.id===currentVideoId); v.likes=(v.likes||0)+1; save(state); updateCounters(); renderVideos();
+});
+document.getElementById('dislikeBtn').addEventListener('click', ()=>{ if(!currentVideoId) return; const v=state.videos.find(x=>x.id===currentVideoId); v.likes=Math.max(0,(v.likes||0)-1); save(state); renderVideos(); updateCounters(); });
+subBtn.addEventListener('click', ()=>{ state.user.subs=(state.user.subs||0)+1; save(state); updateCounters(); });
+document.getElementById('saveLaterBtn').addEventListener('click', ()=>{
+  if(!currentVideoId) return; state.user.watchLater = state.user.watchLater || []; if(state.user.watchLater.includes(currentVideoId)){ state.user.watchLater = state.user.watchLater.filter(x=>x!==currentVideoId); } else state.user.watchLater.push(currentVideoId); save(state); updateCounters();
+});
+
+// playback speed, autoplay, loop
+document.getElementById('speedSel').addEventListener('change', (e)=>{ player.playbackRate = parseFloat(e.target.value); });
+document.getElementById('autoplayChk').addEventListener('change', (e)=>{ state.prefs.autoplay = e.target.checked; save(state); });
+document.getElementById('loopChk').addEventListener('change', (e)=>{ state.prefs.loop = e.target.checked; player.loop = e.target.checked; save(state); });
+
+// comments
+document.getElementById('postCommentBtn').addEventListener('click', ()=>{
+  if(!currentVideoId) return alert('Open a video first'); const txt = document.getElementById('commentInput').value.trim(); if(!txt) return;
+  const v = state.videos.find(x=>x.id===currentVideoId); v.comments = v.comments || []; v.comments.unshift({id:mkId('c'), text:txt, when:now(), user:state.user.name||'Guest'}); save(state); document.getElementById('commentInput').value=''; renderComments();
+});
+function renderComments(){
+  commentsList.innerHTML=''; if(!currentVideoId) return; const v=state.videos.find(x=>x.id===currentVideoId); if(!v) return; (v.comments||[]).forEach(c=>{ const d=document.createElement('div'); d.innerHTML=`<div><strong>${escape(c.user)}</strong> <span class="muted small">${new Date(c.when).toLocaleString()}</span></div><div>${escape(c.text)}</div>`; d.style.padding='6px'; d.style.borderBottom='1px dashed #ddd'; commentsList.appendChild(d); });
+}
+
+// trim & save clip (canvas capture)
+document.getElementById('previewTrimBtn').addEventListener('click', ()=>{
+  const s = parseFloat(document.getElementById('trimStart').value||0); const e = parseFloat(document.getElementById('trimEnd').value||0);
+  if(!currentVideoId) return alert('Open a video first'); if(e<=s) return alert('End must be greater than start');
+  player.currentTime = s; player.play();
+  setTimeout(()=>player.pause(), Math.min((e-s)*1000,3000));
+});
+document.getElementById('saveClipBtn').addEventListener('click', async ()=>{
+  const s = parseFloat(document.getElementById('trimStart').value||0); const e = parseFloat(document.getElementById('trimEnd').value||0);
+  if(!currentVideoId) return alert('Open a video first'); if(e<=s) return alert('End must be greater than start');
+  const v = state.videos.find(x=>x.id===currentVideoId);
+  const canvas=document.createElement('canvas'); canvas.width = player.videoWidth || 640; canvas.height = player.videoHeight || 360;
+  const ctx=canvas.getContext('2d'); const stream = canvas.captureStream(25);
+  const rec = new MediaRecorder(stream, {mimeType:'video/webm'});
+  const chunks=[]; rec.ondataavailable = ev=>{ if(ev.data && ev.data.size) chunks.push(ev.data); };
+  rec.onstop = ()=>{ const blob = new Blob(chunks,{type:'video/webm'}); const file = new File([blob], v.title+'_clip.webm',{type:'video/webm'}); const newId=mkId('vid'); const url = URL.createObjectURL(file); state.videos.unshift({id:newId,title:v.title+' (clip)',desc:'Clip',url,created:now(),likes:0,views:0,channel:v.channel,channelName:v.channelName,comments:[]}); save(state); renderVideos(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name; a.textContent='Download clip'; a.className='btn'; document.getElementById('studioStatus').innerHTML='Clip saved locally: '; document.getElementById('studioStatus').appendChild(a); };
+  player.muted=true; player.currentTime = s; rec.start(); player.play();
+  function draw(){ if(player.currentTime>=e || player.paused || player.ended){ rec.stop(); player.pause(); player.muted=false; return; } ctx.drawImage(player,0,0,canvas.width,canvas.height); requestAnimationFrame(draw); }
+  draw();
+});
+
+// comments: basic already handled
+
+// replace / delete via buttons earlier
+
+// export/import/clear data
+document.getElementById('clearDataBtn').addEventListener('click', ()=>{
+  if(confirm('Clear all local NerdTube data?')){ localStorage.removeItem(KEY); location.reload(); }
+});
+document.getElementById('exportDataBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='nerdtube_export.json'; a.click();
+});
+document.getElementById('importDataBtn').addEventListener('click', ()=>{ document.getElementById('importFile').click(); });
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  const f = e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload = ev=>{ try{ state = JSON.parse(ev.target.result); save(state); alert('Imported'); location.reload(); }catch(err){ alert('Invalid file'); } }; r.readAsText(f);
+});
+
+// account create/signin/delete
+document.getElementById('createAccountBtn').addEventListener('click', ()=>{ const name = prompt('Account name:'); if(!name) return; state.user = {name,subs:0,watchLater:[]}; save(state); document.getElementById('accountBox').innerHTML=`<div>${escape(name)}</div><div class="muted small">Local account</div>`; });
+document.getElementById('signInBtn').addEventListener('click', ()=>{ const name = prompt('Sign in (local demo):'); if(!name) return; state.user.name=name; save(state); document.getElementById('accountBox').innerHTML=`<div>${escape(name)}</div><div class="muted small">Local account</div>`; });
+document.getElementById('delAccountBtn').addEventListener('click', ()=>{ if(confirm('Delete local account (will reset user data)?')){ state.user={name:'Guest',subs:0,watchLater:[]}; save(state); location.reload(); }});
+
+// simple channels: create
+if(state.channels.length===0) state.channels.push({id:mkId('ch'),name:'Guest Channel'});
+// allow creating channel by using createAccountBtn to change name (simplified)
+
+function renderCommentsOnLoad(){ renderComments(); }
+renderCommentsOnLoad();
+
+// helpers exposed
+window.openVideo = openVideo;
+window.delVideo = delVideo;
+window.replaceVideo = replaceVideo;
+window.downloadVideo = downloadVideo;
+window.addToPlaylistPrompt = addToPlaylistPrompt;
+window.viewPlaylist = viewPlaylist;
+window.delPlaylist = delPlaylist;
+
+// extras
+document.getElementById('replaceBtn').addEventListener('click', ()=>{ const f=document.getElementById('fileInput'); if(!f.files[0]) return alert('Choose file to replace'); const current = state.videos[0]; if(!current) return alert('No existing video to replace'); current.url = URL.createObjectURL(f.files[0]); save(state); renderVideos(); alert('Replaced first video'); });
+
+// initial render
+renderVideos();
+renderPlaylists();
+updateCounters();
+
+// apply skin
+function applySkin(name){ document.body.classList.remove('skin-ie2','skin-ie3','skin-ie4','skin-ie5','skin-netscape','skin-opera','skin-win95','skin-winxp','skin-yt05'); document.body.classList.add(name); state.prefs.skin=name; save(state); }
+
+// utilities accessible in console
+window.state = state;
+</script>
+<!-- BEGIN: NerdTube Extended Features Injection -->
+<script>
+// Extended features: background upload/url, custom skin upload, nerdAudio, retro effects (expanded), custom logo,
+// proxy toggle (simulated), notifications + settings, change user/profile editing, rename video, simple metadata editor.
+// These are client-side, localStorage-backed, and non-networking (proxy is simulated flag).
+
+(function(){
+  // helpers (reuse existing state/save if present)
+  try { window.state = window.state || JSON.parse(localStorage.getItem('nerdtube_v2')||'{}'); } catch(e){ window.state = window.state || {}; }
+  window.state.prefs = window.state.prefs || {};
+  const saveState = ()=> localStorage.setItem('nerdtube_v2', JSON.stringify(window.state));
+
+  // 1) Custom Background UI
+  const leftPanel = document.querySelector('aside.panel');
+  if(leftPanel){
+    const bgBlock = document.createElement('div');
+    bgBlock.innerHTML = `
+      <hr/>
+      <h4>Custom Background</h4>
+      <input id="bgFilePicker" type="file" accept="image/*" class="small-input" /><br/>
+      <input id="bgUrlInput" type="url" placeholder="Image URL for background" class="small-input" style="margin-top:6px" /><br/>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn" id="applyBgBtn">Apply Background</button>
+        <button class="btn" id="clearBgBtn">Clear Background</button>
+      </div>
+    `;
+    leftPanel.appendChild(bgBlock);
+  }
+
+  // Apply background from saved pref
+  if(window.state.prefs.bg){
+    document.body.style.backgroundImage = window.state.prefs.bg && window.state.prefs.bg.startsWith('url(') ? window.state.prefs.bg : `url(${window.state.prefs.bg})`;
+    document.body.style.backgroundSize = 'cover';
+  }
+
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.id==='applyBgBtn'){
+      const file = document.getElementById('bgFilePicker').files[0];
+      const url = document.getElementById('bgUrlInput').value.trim();
+      if(file){ const blob = URL.createObjectURL(file); document.body.style.backgroundImage = `url(${blob})`; document.body.style.backgroundSize='cover'; window.state.prefs.bg = blob; saveState(); alert('Background applied from file (session blob).'); }
+      else if(url){ document.body.style.backgroundImage = `url(${url})`; document.body.style.backgroundSize='cover'; window.state.prefs.bg = url; saveState(); alert('Background applied from URL.'); }
+      else alert('Choose a file or paste a URL');
+    }
+    if(e.target && e.target.id==='clearBgBtn'){
+      document.body.style.backgroundImage = ''; delete window.state.prefs.bg; saveState(); alert('Background cleared.');
+    }
+  });
+
+  // 2) Custom CSS skin upload
+  const skinBlock = document.createElement('div');
+  skinBlock.innerHTML = `
+    <hr/>
+    <h4>Upload Theme / Skin (CSS)</h4>
+    <input id="skinFilePicker" type="file" accept=".css" class="small-input" /><br/>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button class="btn" id="applySkinFileBtn">Apply CSS Skin</button>
+      <button class="btn" id="removeInjectedSkinsBtn">Remove Injected Skins</button>
+    </div>
+    <div class="muted small" style="margin-top:6px">Custom CSS is injected into the page head. It will persist for the session.</div>
+  `;
+  leftPanel.appendChild(skinBlock);
+
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.id==='applySkinFileBtn'){
+      const f = document.getElementById('skinFilePicker').files[0]; if(!f) return alert('Pick a .css file');
+      const r = new FileReader();
+      r.onload = (ev)=>{
+        const tag = document.createElement('style'); tag.className='injected-custom-skin'; tag.textContent = ev.target.result; document.head.appendChild(tag);
+        alert('Custom skin applied. To remove use "Remove Injected Skins".');
+      };
+      r.readAsText(f);
+    }
+    if(e.target && e.target.id==='removeInjectedSkinsBtn'){
+      document.querySelectorAll('style.injected-custom-skin').forEach(n=>n.remove());
+      alert('Removed injected skins.');
+    }
+  });
+
+  // 3) NerdAudio - add audio element to player area if not present
+  const playerArea = document.getElementById('playerArea');
+  if(playerArea && !document.getElementById('nerdAudio')){
+    const audioHtml = document.createElement('div');
+    audioHtml.innerHTML = `
+      <hr/>
+      <h4>NerdAudio Player</h4>
+      <audio id="nerdAudio" controls style="width:100%"></audio>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <input id="audioFilePicker" type="file" accept="audio/*" class="small-input" />
+        <button class="btn" id="loadAudioBtn">Load Audio</button>
+        <button class="btn" id="clearAudioBtn">Clear Audio</button>
+      </div>
+      <div class="muted small">Supports many audio types via browser (mp3, wav, ogg, m4a). Files are local blobs.</div>
+    `;
+    playerArea.appendChild(audioHtml);
+  }
+
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.id==='loadAudioBtn'){
+      const f = document.getElementById('audioFilePicker').files[0]; if(!f) return alert('Select an audio file');
+      const url = URL.createObjectURL(f); const a = document.getElementById('nerdAudio'); a.src = url; a.play().catch(()=>{});
+      // save as a temporary "audio" entry in state for session persistence
+      window.state.lastAudio = {name:f.name, url}; saveState(); alert('Audio loaded into NerdAudio');
+    }
+    if(e.target && e.target.id==='clearAudioBtn'){ const a=document.getElementById('nerdAudio'); a.pause(); a.src=''; delete window.state.lastAudio; saveState(); alert('Audio cleared'); }
+  });
+
+  // If audio was saved in prefs, restore it
+  if(window.state.lastAudio && window.state.lastAudio.url){
+    const a = document.getElementById('nerdAudio'); if(a){ a.src = window.state.lastAudio.url; }
+  }
+
+  // 4) Retro Effects: add more options and CSS classes
+  const effectsBlock = document.createElement('div');
+  effectsBlock.innerHTML = `
+    <hr/>
+    <h4>Video Effects</h4>
+    <select id="effectSelExtended" class="small-input">
+      <option value="">None</option>
+      <option value="effect-dvd">DVD (clean)</option>
+      <option value="effect-vhs">VHS (scrubby)</option>
+      <option value="effect-vcr">VCR (grain)</option>
+      <option value="effect-analog">Analog Glow</option>
+      <option value="effect-scanlines">Scanlines</option>
+      <option value="effect-telecine">Telecine (pulldown)</option>
+    </select>
+    <div class="muted small" style="margin-top:6px">Apply visual filters to the video player for retro look.</div>
+  `;
+  leftPanel.appendChild(effectsBlock);
+
+  // Append CSS for effects
+  const effCSS = document.createElement('style'); effCSS.className='injected-effects-css';
+  effCSS.textContent = `
+    /* retro effects injected */
+    .effect-dvd { filter: contrast(1.15) saturate(1.2) hue-rotate(-6deg) ; }
+    .effect-vhs { filter: contrast(1.2) saturate(1.1) blur(0.6px); transform: translateZ(0); }
+    .effect-vcr { filter: grayscale(.05) contrast(1.25) brightness(.95) sepia(.05); }
+    .effect-analog { filter: contrast(1.05) saturate(1.4) drop-shadow(0 0 6px rgba(255,200,100,.08)); }
+    .effect-scanlines { position:relative; }
+    .effect-scanlines::after { content:''; pointer-events:none; position:absolute; inset:0; background-image: linear-gradient(rgba(0,0,0,0.04) 50%, rgba(255,255,255,0) 50%); background-size:100% 4px; mix-blend-mode: overlay; }
+    .effect-telecine { filter: contrast(1.05) brightness(0.98) saturate(.95); animation: telecine 0.3s steps(2) infinite; }
+    @keyframes telecine { from{ transform: translateY(0);} to{ transform: translateY(-0.5px);} }
+  `;
+  document.head.appendChild(effCSS);
+
+  document.getElementById('effectSelExtended').addEventListener('change', function(e){
+    const val = e.target.value;
+    // clear previous effect classes
+    player.classList.remove('effect-dvd','effect-vhs','effect-vcr','effect-analog','effect-scanlines','effect-telecine');
+    if(val) player.classList.add(val);
+    // save pref
+    window.state.prefs.effect = val; saveState();
+  });
+
+  // Restore last effect
+  if(window.state.prefs.effect){ const sel = document.getElementById('effectSelExtended'); if(sel) sel.value = window.state.prefs.effect; player.classList.add(window.state.prefs.effect); }
+
+  // 5) Custom Logo upload (in header)
+  const logoInput = document.createElement('input'); logoInput.type='file'; logoInput.accept='image/*'; logoInput.id='logoUpload'; logoInput.className='hidden';
+  document.body.appendChild(logoInput);
+  const logoBtn = document.createElement('button'); logoBtn.className='btn'; logoBtn.textContent='Upload Logo'; logoBtn.style.marginLeft='6px';
+  document.querySelector('header').appendChild(logoBtn);
+  logoBtn.addEventListener('click', ()=> document.getElementById('logoUpload').click() );
+  logoInput.addEventListener('change', function(){
+    const f = this.files[0]; if(!f) return;
+    const url = URL.createObjectURL(f); const logo = document.querySelector('.logo');
+    if(logo) logo.innerHTML = `<img src="${url}" alt="NerdTube logo" class="logo-img"><div class="tagline">Broadcast Takeself</div>`;
+    window.state.prefs.logo = url; saveState(); alert('Logo applied (session blob)');
+  });
+  // If pref exists, restore
+  if(window.state.prefs.logo){ const logo = document.querySelector('.logo'); if(logo) logo.innerHTML = `<img src="${window.state.prefs.logo}" alt="NerdTube logo" class="logo-img"><div class="tagline">Broadcast Yourself</div>`; }
+
+  // 6) Proxy toggle (simulated): stores a flag and shows warning (no real network proxying in client demo)
+  const proxyBtn = document.createElement('button'); proxyBtn.className='btn'; proxyBtn.id='proxyToggleBtn'; proxyBtn.textContent = window.state.prefs.proxy ? 'Proxy: On' : 'Proxy: Off'; proxyBtn.style.marginLeft='6px';
+  document.querySelector('header').appendChild(proxyBtn);
+  proxyBtn.addEventListener('click', ()=>{
+    window.state.prefs.proxy = !window.state.prefs.proxy; proxyBtn.textContent = window.state.prefs.proxy ? 'Proxy: On' : 'Proxy: Off'; saveState();
+    alert('Proxy setting toggled (simulated). This demo does not perform real proxying.');
+  });
+
+  // 7) Notifications & settings
+  const notifBlock = document.createElement('div');
+  notifBlock.innerHTML = `
+    <hr/>
+    <h4>Notifications</h4>
+    <div class="muted small">Allow browser notifications to receive local alerts (playback events, uploads)</div>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button class="btn" id="enableNotifBtn">Enable Notifications</button>
+      <button class="btn" id="testNotifBtn">Test Notification</button>
+    </div>
+    <label class="small" style="margin-top:6px">Notification sound <input type="checkbox" id="notifSoundChk"></label>
+  `;
+  leftPanel.appendChild(notifBlock);
+
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.id==='enableNotifBtn'){
+      if(!('Notification' in window)) return alert('Notifications not supported in this browser');
+      Notification.requestPermission().then(p=> alert('Notification permission: '+p));
+    }
+    if(e.target && e.target.id==='testNotifBtn'){
+      const perm = Notification.permission;
+      if(perm==='granted'){ const n = new Notification('NerdTube Test', {body:'This is a test notification.'}); if(document.getElementById('notifSoundChk').checked){ try{ const snd = new Audio(); snd.src = window.state.prefs.notifSound || ''; snd.play().catch(()=>{}); }catch(err){} } }
+      else alert('Notification permission: ' + perm + '. Click "Enable Notifications" to request permission.');
+    }
+  });
+
+  // Save notif sound preference toggle
+  const notifSound = document.getElementById('notifSoundChk');
+  if(notifSound){ notifSound.checked = !!window.state.prefs.notifSoundEnabled; notifSound.addEventListener('change', function(){ window.state.prefs.notifSoundEnabled = this.checked; saveState(); }); }
+
+  // 8) Change user/profile: quick edit UI in accountBox
+  const accountBox = document.getElementById('accountBox');
+  if(accountBox){
+    const editBtn = document.createElement('button'); editBtn.className='btn'; editBtn.textContent='Edit Profile'; editBtn.style.marginTop='6px';
+    accountBox.appendChild(editBtn);
+    editBtn.addEventListener('click', ()=>{
+      const name = prompt('New display name:', window.state.user?.name || 'Guest');
+      if(!name) return;
+      window.state.user = window.state.user || {}; window.state.user.name = name; saveState();
+      accountBox.innerHTML = `<div>${escapeHtml(name)}</div><div class="muted small">Local account</div>`;
+      alert('Profile updated locally');
+    });
+  }
+
+  // 9) Rename/Change Video + simple metadata editor: add "Edit" button to open video details
+  window.openVideo = (function(origOpen){
+    return function(id){ origOpen(id); // call original open if present
+      // create edit UI: Rename + description edit
+      const v = (window.state.videos||[]).find(x=>x.id===id);
+      if(!v) return;
+      // inject edit controls next to title if not present
+      const holderId = 'videoEditControls';
+      let holder = document.getElementById(holderId);
+      if(holder) holder.remove();
+      holder = document.createElement('div'); holder.id = holderId; holder.style.marginTop='6px';
+      holder.innerHTML = `
+        <button class="btn" id="renameVideoBtn">Rename</button>
+        <button class="btn" id="editMetaBtn">Edit Metadata</button>
+        <button class="btn" id="replaceFileBtn">Replace File</button>
+      `;
+      const titleEl = document.getElementById('videoTitle');
+      titleEl.parentNode.insertBefore(holder, titleEl.nextSibling);
+
+      // attach events
+      document.getElementById('renameVideoBtn').onclick = function(){
+        const nv = prompt('New title:', v.title); if(!nv) return; v.title = nv; saveState(); document.getElementById('videoTitle').textContent = v.title; renderVideos(document.getElementById('search').value||''); alert('Title updated');
+      };
+      document.getElementById('editMetaBtn').onclick = function(){
+        const nd = prompt('New description:', v.desc||''); if(nd===null) return; v.desc = nd; saveState(); document.getElementById('videoDesc').textContent = v.desc; renderVideos(document.getElementById('search').value||''); alert('Description updated');
+      };
+      document.getElementById('replaceFileBtn').onclick = function(){
+        const inp = document.createElement('input'); inp.type='file'; inp.accept='video/*,audio/*,image/*'; inp.onchange = ()=>{ const f=inp.files[0]; if(!f) return; v.url = URL.createObjectURL(f); v.fileReplaced = true; saveState(); renderVideos(); document.getElementById('player').src = v.url; alert('File replaced for this video'); }; inp.click();
+      };
+    };
+  })(window.openVideo || function(id){ console.warn('openVideo missing', id); });
+
+  // 10) Utility: escapeHtml reuse (small)
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // 11) Ensure renderVideos and other functions are available (they exist in original, but bind if missing)
+  if(typeof renderVideos === 'function'){ /* ok */ } else {
+    window.renderVideos = function(){ console.warn('renderVideos missing in page context'); };
+  }
+
+  // Final save of state in case we set defaults
+  saveState();
+
+  // Small UX: notify when plugin loaded
+  console.info('NerdTube extended features injected.');
+
+})(); // IIFE end
+</script>
+<!-- END: NerdTube Extended Features Injection -->
+</body>
+</html>
