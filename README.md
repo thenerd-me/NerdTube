@@ -1,6 +1,6 @@
 📺 The First of NerdTube (1997)
 
-In August 27, 1997, the year when people still typed “www” out loud, and dial-up tones were the soundtrack of the web. Out of a cramped bedroom stacked with game magazines, floppy disks, and a bulky CRT monitor, a young coder named Alex launched a site called NerdTube.
+In September 23, 1997, the year when people still typed “www” out loud, and dial-up tones were the soundtrack of the web. Out of a cramped bedroom stacked with game magazines, floppy disks, and a bulky CRT monitor, a young coder named Alex launched a site called NerdTube.
 
 Unlike the polished portals of the time, NerdTube was raw — a patchwork of HTML frames, blinking GIF banners, and a guestbook that always seemed to break. But what it had was spirit. It was a place for “nerds” to upload and share their oddities: Star Trek fan videos, 3D animation experiments, remixes of video game music, and recordings of comic-con panels long before YouTube was even an idea.
 
